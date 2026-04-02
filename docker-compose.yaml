@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+    ocr-backend:
+        build: .
+        container_name: ocr-backend
+        ports:
+            - "8000:8000"
+        env_file:
+            - .env
+        volumes:
+            # Mount the temp directory to your host to inspect processed files
+            - ./temp:/app/temp
+            # Persist EasyOCR models so they don't re-download if you change the Dockerfile
+            - ocr_models:/root/.EasyOCR
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+
+volumes:
+    ocr_models:

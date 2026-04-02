@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment
+.env
+
+# EasyOCR model cache
+~/.EasyOCR/
+
+# Temp uploads
+/tmp/ocr_uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.ruff_cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sample outputs (keep inputs, ignore generated PDFs)
+sample/output/*.pdf
