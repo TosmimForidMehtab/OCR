@@ -32,6 +32,3 @@ env/
 # OS
 .DS_Store
 Thumbs.db
-
-# Sample outputs (keep inputs, ignore generated PDFs)
-sample/output/*.pdf
