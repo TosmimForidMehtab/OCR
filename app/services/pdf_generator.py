@@ -21,7 +21,6 @@ _PT = 1.0
 
 
 def _register_fonts(fonts_dir: Path, font_name: str) -> None:
-    """Register the Unicode font with ReportLab (idempotent)."""
     if font_name in pdfmetrics.getRegisteredFontNames():
         return
 
@@ -40,9 +39,7 @@ def generate_searchable_pdf(
     original_image: Image.Image,
     ocr_result: OCRResult,
 ) -> bytes:
-    """
-    Compose a searchable PDF from the original image and OCR results.
-    """
+    
     settings = get_settings()
 
     try:

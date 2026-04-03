@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 
 def process_image_to_pdf(
     image_content: bytes,
-    reader: any = None,  # Kept for signature compatibility
+    reader: any = None,
     settings: any = None,
     langs: list[str] | None = None,
 ) -> tuple[bytes, OCRResult]:
@@ -32,7 +32,6 @@ def process_image_to_pdf(
     pil_image = deskew_pil_image(pil_image)
 
     # 3. Run OCR
-    # Note: reader is no longer used as Tesseract is stateless
     ocr_result = run_ocr(pil_image, settings=settings, langs=langs)
 
     # 4. Generate Searchable PDF

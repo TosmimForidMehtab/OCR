@@ -19,7 +19,6 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("startup_begin", langs=settings.lang_list)
 
-    # Tesseract does not require a persistent reader object
     app.state.ocr_reader = None
 
     logger.info("service_ready", langs=settings.lang_list)

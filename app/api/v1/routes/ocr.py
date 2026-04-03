@@ -17,7 +17,6 @@ settings = get_settings()
 
 
 def _validate_langs(langs_param: str | None) -> list[str]:
-    # Map from user-friendly/EasyOCR codes to Tesseract codes
     mapping = {
         "eng": "eng",
         "hin": "hin",
@@ -34,7 +33,6 @@ def _validate_langs(langs_param: str | None) -> list[str]:
         from app.core.exceptions import UnsupportedFileTypeError
         raise UnsupportedFileTypeError(f"Unsupported language codes: {invalid}")
     
-    # Return Tesseract-compatible codes
     return list(set(mapping[r] for r in requested))
 
 
