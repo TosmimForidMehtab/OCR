@@ -4,7 +4,7 @@ from pathlib import Path
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-_SUPPORTED_LANGS = {"en", "hi", "mr"}
+_SUPPORTED_LANGS = {"eng", "hin", "mar"}
 _BASE_DIR = Path(__file__).resolve().parents[2]
 
 
@@ -21,9 +21,8 @@ class Settings(BaseSettings):
     app_reload: bool = False
 
     # OCR Tuning
-    ocr_default_langs: str = "en"
+    ocr_default_langs: str = "eng"
     ocr_confidence_threshold: float = 0.4
-    ocr_gpu: bool = False
     ocr_line_group_ratio: float = 0.015
     ocr_min_dimension: int = 1000
     ocr_deskew_limit: int = 45

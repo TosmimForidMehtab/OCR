@@ -1,6 +1,6 @@
 # OCR Backend
 
-Accepts a JPG/PNG image, extracts text via **EasyOCR**, and returns a **searchable PDF**
+Accepts a JPG/PNG image, extracts text via **Tesseract OCR**, and returns a **searchable PDF**
 where all text is selectable. Supports **English**, **Hindi**, and **Marathi**.
 
 ---
@@ -9,14 +9,25 @@ where all text is selectable. Supports **English**, **Hindi**, and **Marathi**.
 
 - Python 3.14+
 - `libmagic` (used by `python-magic` for MIME detection)
+- **Tesseract OCR** engine and language packs (`eng`, `hin`, `mar`)
 
+### System Dependencies (Tesseract)
+
+#### macOS
 ```bash
-# macOS
-brew install libmagic
-
-# Debian / Ubuntu
-sudo apt-get install libmagic1
+brew install libmagic tesseract tesseract-lang
 ```
+
+#### Debian / Ubuntu
+```bash
+sudo apt-get update
+sudo apt-get install libmagic1 tesseract-ocr tesseract-ocr-hin tesseract-ocr-mar
+```
+
+#### Windows
+1. Download installer from [UB-Mannheim/tesseract](https://github.com/UB-Mannheim/tesseract/wiki).
+2. Install and add the Tesseract path to your system `PATH` environment variable.
+3. Install additional language data (`hin`, `mar`) during installation or download `.traineddata` files to the `tessdata` folder.
 
 ---
 
@@ -44,24 +55,6 @@ cp .env.example .env
 mkdir -p assets/fonts
 cp ~/Downloads/NotoSans-Regular.ttf assets/fonts/
 ```
-
----
-
-## Pre-download EasyOCR Models
-
-EasyOCR downloads model weights on first use (~100–300 MB per language).
-Run this once before starting the server to avoid a cold-start delay:
-
-```bash
-python - <<'EOF'
-import easyocr
-# Downloads models for all supported languages
-easyocr.Reader(['en', 'hi', 'mr'], gpu=False, verbose=True)
-print("Models ready.")
-EOF
-```
-
-Models are cached in `~/.EasyOCR/`.
 
 ---
 
@@ -122,9 +115,8 @@ All settings are read from `.env` (see `.env.example`):
 |-----------------------------|--------------------|------------------------------------------|
 | `APP_HOST`                  | `0.0.0.0`          | Bind address                             |
 | `APP_PORT`                  | `8000`             | Bind port                                |
-| `OCR_DEFAULT_LANGS`         | `en`               | Default languages if `?langs=` is absent |
+| `OCR_DEFAULT_LANGS`         | `eng`              | Default languages if `?langs=` is absent |
 | `OCR_CONFIDENCE_THRESHOLD`  | `0.4`              | Minimum confidence to include a word     |
-| `OCR_GPU`                   | `false`            | Enable CUDA GPU for EasyOCR              |
 | `MAX_UPLOAD_SIZE_MB`        | `10`               | Maximum upload size in MB                |
 | `TEMP_DIR`                  | `/tmp/ocr_uploads` | Directory for temporary files            |
 | `LOG_LEVEL`                 | `INFO`             | `DEBUG`, `INFO`, `WARNING`, `ERROR`      |
@@ -146,7 +138,7 @@ ocr-backend/
 │   ├── models/schemas.py        # Pydantic models
 │   ├── services/
 │   │   ├── image_processor.py   # OpenCV/Pillow pre-processing pipeline
-│   │   ├── ocr_service.py       # EasyOCR orchestration + layout assembly
+│   │   ├── ocr_service.py       # Tesseract orchestration + layout assembly
 │   │   └── pdf_generator.py     # ReportLab searchable PDF builder
 │   └── utils/file_utils.py      # MIME validation, temp file helpers
 ├── assets/fonts/                # NotoSans TTF (Devanagari support)
@@ -156,3 +148,4 @@ ocr-backend/
 ├── pyproject.toml
 └── README.md
 ```
+

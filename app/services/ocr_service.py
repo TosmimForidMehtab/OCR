@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import easyocr
+import pytesseract
+from pytesseract import Output
 import numpy as np
 from PIL import Image
 
@@ -16,8 +17,9 @@ logger = get_logger(__name__)
 
 def process_image_to_pdf(
     image_content: bytes,
-    reader: easyocr.Reader,
+    reader: any = None,  # Kept for signature compatibility
     settings: any = None,
+    langs: list[str] | None = None,
 ) -> tuple[bytes, OCRResult]:
     import io
     from PIL import Image
@@ -30,7 +32,8 @@ def process_image_to_pdf(
     pil_image = deskew_pil_image(pil_image)
 
     # 3. Run OCR
-    ocr_result = run_ocr(pil_image, reader)
+    # Note: reader is no longer used as Tesseract is stateless
+    ocr_result = run_ocr(pil_image, settings=settings, langs=langs)
 
     # 4. Generate Searchable PDF
     pdf_bytes = generate_searchable_pdf(pil_image, ocr_result)
@@ -38,27 +41,62 @@ def process_image_to_pdf(
     return pdf_bytes, ocr_result
 
 
-def run_ocr(image: Image.Image, reader: easyocr.Reader) -> OCRResult:
-    settings = get_settings()
+def run_ocr(
+    image: Image.Image, 
+    settings: any = None, 
+    langs: list[str] | None = None
+) -> OCRResult:
+    if settings is None:
+        settings = get_settings()
+    
+    if langs is None:
+        langs = settings.lang_list
+    
     original_w, original_h = image.size
 
     try:
         processed: np.ndarray = preprocess(image)
-        raw_results = reader.readtext(processed, detail=1, paragraph=False)
+        # Convert back to PIL for pytesseract if it was processed as numpy
+        # Preprocess returns a grayscale or binary image
+        processed_pil = Image.fromarray(processed)
+        
+        tess_langs = "+".join(langs)
+        data = pytesseract.image_to_data(
+            processed_pil, 
+            lang=tess_langs, 
+            output_type=Output.DICT
+        )
     except Exception as exc:
         logger.exception("ocr_inference_failed", error=str(exc))
         raise OCRProcessingError(f"OCR inference failed: {exc}") from exc
 
     words: list[OCRWord] = []
-    threshold = settings.ocr_confidence_threshold
+    threshold_percent = settings.ocr_confidence_threshold * 100
 
-    for bbox, text, confidence in raw_results:
-        if confidence < threshold:
-            continue
-        text = text.strip()
-        if not text:
-            continue
-        words.append(OCRWord(text=text, confidence=confidence, bbox=bbox))
+    n_boxes = len(data["text"])
+    for i in range(n_boxes):
+        # level 5 is 'word' level
+        if int(data["level"][i]) == 5:
+            text = data["text"][i].strip()
+            confidence = float(data["conf"][i])
+            
+            if not text or confidence < threshold_percent:
+                continue
+            
+            # Convert tesseract left,top,w,h to EasyOCR-style 4-point bbox
+            l, t, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
+            bbox = [
+                [float(l), float(t)],
+                [float(l + w), float(t)],
+                [float(l + w), float(t + h)],
+                [float(l), float(t + h)]
+            ]
+            
+            words.append(OCRWord(
+                text=text, 
+                confidence=confidence / 100.0, 
+                bbox=bbox
+            ))
 
     words = _sort_into_lines(
         words,
@@ -68,7 +106,7 @@ def run_ocr(image: Image.Image, reader: easyocr.Reader) -> OCRResult:
 
     logger.info(
         "ocr_complete",
-        total_detections=len(raw_results),
+        total_detections=n_boxes,
         accepted=len(words),
     )
 

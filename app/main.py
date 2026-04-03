@@ -4,7 +4,6 @@ import uuid
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
-import easyocr
 from fastapi import FastAPI, Request
 
 from app.core.config import get_settings
@@ -18,15 +17,12 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("startup_begin", langs=settings.lang_list, gpu=settings.ocr_gpu)
+    logger.info("startup_begin", langs=settings.lang_list)
 
-    app.state.ocr_reader = easyocr.Reader(
-        settings.lang_list,
-        gpu=settings.ocr_gpu,
-        verbose=False,
-    )
+    # Tesseract does not require a persistent reader object
+    app.state.ocr_reader = None
 
-    logger.info("ocr_reader_ready", langs=settings.lang_list)
+    logger.info("service_ready", langs=settings.lang_list)
     yield
 
     logger.info("shutdown")
@@ -36,7 +32,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="OCR Backend",
         description=(
-            "Accepts a JPG/PNG image, extracts text via EasyOCR "
+            "Accepts a JPG/PNG image, extracts text via Tesseract "
             "(English, Hindi, Marathi), and returns a searchable PDF."
         ),
         version="1.0.0",

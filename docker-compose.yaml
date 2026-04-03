@@ -11,14 +11,9 @@ services:
         volumes:
             # Mount the temp directory to your host to inspect processed files
             - ./temp:/app/temp
-            # Persist EasyOCR models so they don't re-download if you change the Dockerfile
-            - ocr_models:/root/.EasyOCR
         restart: unless-stopped
         healthcheck:
             test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
             interval: 30s
             timeout: 10s
             retries: 3
-
-volumes:
-    ocr_models:

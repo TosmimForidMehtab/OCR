@@ -17,7 +17,14 @@ settings = get_settings()
 
 
 def _validate_langs(langs_param: str | None) -> list[str]:
-    supported = {"en", "hi", "mr"}
+    # Map from user-friendly/EasyOCR codes to Tesseract codes
+    mapping = {
+        "eng": "eng",
+        "hin": "hin",
+        "mar": "mar",
+    }
+    supported = set(mapping.keys())
+    
     if not langs_param:
         return settings.lang_list
 
@@ -26,7 +33,9 @@ def _validate_langs(langs_param: str | None) -> list[str]:
     if invalid:
         from app.core.exceptions import UnsupportedFileTypeError
         raise UnsupportedFileTypeError(f"Unsupported language codes: {invalid}")
-    return requested
+    
+    # Return Tesseract-compatible codes
+    return list(set(mapping[r] for r in requested))
 
 
 @router.get("/health", response_model=HealthResponse, tags=["health"])
@@ -60,6 +69,7 @@ async def extract(
         image_content=content,
         reader=request.app.state.ocr_reader,
         settings=settings,
+        langs=lang_list,
     )
 
     # 3. Stream result
